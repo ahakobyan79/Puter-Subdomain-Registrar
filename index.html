@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subdomain Registrar</title>
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: #1f2a44;
+    }
+    .navbar, .container, .success-section, .toast { border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .navbar {
+      background: #fff; padding: 15px 30px; display: flex; justify-content: space-between; width: 100%;
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .navbar .logo { font-size: 24px; font-weight: 700; color: #3b82f6; }
+    .navbar .actions { display: flex; gap: 15px; align-items: center; }
+    .user-info { background: #f3f4f6; padding: 6px 12px; border-radius: 20px; font-size: 14px; color: #6b7280; }
+    button { padding: 8px 16px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; }
+    .login-button { background: #3b82f6; color: white; }
+    .logout-button { background: #ef4444; color: white; }
+    .folder-button { background: #e5e7eb; color: #374151; }
+    .container {
+      background: white; padding: 30px; max-width: 600px; width: 100%; margin-top: 40px;
+    }
+    h1 { text-align: center; font-size: 28px; font-weight: 700; margin-bottom: 20px; }
+    .input-group { position: relative; margin-bottom: 20px; }
+    .subdomain-input {
+      width: 100%; padding: 12px 50px 12px 20px; font-size: 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+    }
+    .domain-suffix { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); color: #6b7280; }
+    .status-message { padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+    .status-message.available { background: #dcfce7; color: #16a34a; }
+    .status-message.taken { background: #fee2e2; color: #dc2626; }
+    .status-message.checking { background: #fefcbf; color: #d97706; }
+    .register-button {
+      width: 100%; padding: 12px; background: #3b82f6; color: white; border-radius: 10px;
+    }
+    .success-section { display: none; background: #f0fdf4; padding: 20px; margin-top: 20px; text-align: center; }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #1f2a44; color: white; opacity: 0; transition: opacity 0.3s ease; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">Subdomain Registrar</div>
+    <div class="actions">
+      <span id="selectedFolder" class="user-info">No folder selected</span>
+      <button id="folderButton" class="folder-button">📁 Select Folder</button>
+      <span id="userInfo" class="user-info">Not signed in</span>
+      <button id="loginButton" class="login-button">Sign In</button>
+      <button id="logoutButton" class="logout-button" style="display: none;">Sign Out</button>
+    </div>
+  </nav>
+  <div class="container">
+    <h1>Register Your Subdomain</h1>
+    <div class="input-group">
+      <input type="text" id="subdomainInput" class="subdomain-input" placeholder="Enter your subdomain">
+      <span class="domain-suffix">.puter.site</span>
+    </div>
+    <div id="statusMessage" class="status-message" style="display: none;"></div>
+    <button id="registerButton" class="register-button" disabled>Register Subdomain</button>
+    <div id="successSection" class="success-section">
+      <h3>🎉 Subdomain Registered!</h3>
+      <p>Your subdomain is ready:</p>
+      <a id="siteLink" target="_blank"></a>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script>
+    let currentDomain = '', folderPath = null, isAvailable = false;
+    const el = id => document.getElementById(id);
+    const ui = { sub: el('subdomainInput'), msg: el('statusMessage'), reg: el('registerButton'), succ: el('successSection'), link: el('siteLink'), toast: el('toast'), folder: el('selectedFolder'), login: el('loginButton'), logout: el('logoutButton'), user: el('userInfo') };
+
+    const showToast = msg => { ui.toast.textContent = msg; ui.toast.classList.add('show'); setTimeout(() => ui.toast.classList.remove('show'), 3000); };
+
+    const updateAuthUI = async () => {
+      // This function ensures the UI reflects the current authentication state.
+      // First, we check if the user is signed in to Puter using `puter.auth.isSignedIn()`.
+      // If signed in, we retrieve user info with `puter.auth.getUser()` to personalize the UI.
+      // If not signed in, we reset the interface and disable input until login occurs.
+      if (puter.auth.isSignedIn()) {
+        // The user is signed in, now fetch their user profile (e.g., username)
+        const user = await puter.auth.getUser(); // ✅ Gets user object with info like username
+        ui.user.textContent = user.username;
+        ui.login.style.display = 'none';
+        ui.logout.style.display = 'inline-block';
+        ui.sub.disabled = false;
+      } else {
+        ui.user.textContent = 'Not signed in';
+        ui.login.style.display = 'inline-block';
+        ui.logout.style.display = 'none';
+        ui.sub.disabled = true;
+        folderPath = null;
+        ui.folder.textContent = 'No folder selected';
+      }
+      ui.reg.disabled = !folderPath || !isAvailable;
+    };
+
+    // When the Sign In button is clicked, we initiate the login flow.
+// This opens a popup handled by Puter where the user can sign in.
+// After successful sign-in, we refresh the UI to reflect the logged-in state.
+ui.login.onclick = async () => {
+      await puter.auth.signIn(); // ✅ Opens Puter.com auth popup and signs user in
+      updateAuthUI();
+    };
+
+    ui.logout.onclick = () => {
+      // This logs the user out of the current Puter session.
+      puter.auth.signOut(); // ✅ Logs user out of current Puter session
+      updateAuthUI();
+    };
+
+    el('folderButton').onclick = async () => {
+      // Open a folder picker dialog so the user can choose a directory.
+      // This folder will be used to host their subdomain files.
+      const dir = await puter.ui.showDirectoryPicker(); // ✅ Opens a native file dialog to let user pick a folder
+      if (dir?.path) {
+        folderPath = dir.path;
+        ui.folder.textContent = `📁 ${dir.path}`;
+        ui.reg.disabled = !folderPath || !isAvailable;
+      }
+    };
+
+    ui.sub.oninput = () => {
+      clearTimeout(window.timer);
+      window.timer = setTimeout(async () => {
+        currentDomain = ui.sub.value.trim().toLowerCase();
+        if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]?$/.test(currentDomain)) {
+          ui.msg.textContent = 'Invalid subdomain'; ui.msg.className = 'status-message taken'; isAvailable = false; return;
+        }
+        ui.msg.style.display = 'block';
+        ui.msg.textContent = 'Checking availability...';
+        ui.msg.className = 'status-message checking';
+        try {
+          const res = await fetch(`https://${currentDomain}.puter.site/`); // Attempts to fetch the subdomain homepage
+          const txt = await res.text();
+          isAvailable = txt.includes('Subdomain not found'); // Basic way to check if it's unclaimed
+          ui.msg.textContent = isAvailable ? 'Available!' : 'Taken';
+          ui.msg.className = `status-message ${isAvailable ? 'available' : 'taken'}`;
+        } catch {
+          ui.msg.textContent = 'Error checking'; ui.msg.className = 'status-message taken';
+        }
+        ui.reg.disabled = !folderPath || !isAvailable;
+      }, 300);
+    };
+
+    ui.reg.onclick = async () => {
+      if (!currentDomain || !folderPath || !isAvailable) return;
+      ui.reg.disabled = true;
+      try {
+        const path = `${folderPath}/${currentDomain}`;
+        // This creates a new directory for the subdomain within the selected folder.
+        // `dedupeName: true` ensures no name collision if a folder already exists.
+        await puter.fs.mkdir(path, { dedupeName: true }); // ✅ Creates a folder for this domain inside chosen parent folder
+
+        const html = `<html><body><h1>Welcome to ${currentDomain}.puter.site</h1></body></html>`;
+        // Write an initial `index.html` file into the new folder.
+        // This is the landing page users will see at their subdomain.
+        await puter.fs.write(`${path}/index.html`, html); // ✅ Writes an index.html file with placeholder welcome message
+
+        // Register the subdomain with Puter hosting.
+        // This links the new folder to the chosen subdomain and publishes it live.
+        await puter.hosting.create(currentDomain, path); // ✅ Registers this subdomain to serve content from the selected path
+
+        const url = `https://${currentDomain}.puter.site`;
+        ui.link.href = url;
+        ui.link.textContent = url;
+        ui.succ.style.display = 'block';
+        ui.succ.scrollIntoView({ behavior: 'smooth' });
+        showToast('Subdomain registered');
+      } catch (err) {
+        showToast('Failed: ' + err.message);
+      }
+      ui.reg.disabled = false;
+    };
+
+    updateAuthUI(); // Run on page load
+  </script>
+</body>
+</html>
