@@ -27,7 +27,6 @@ function showToast(message, duration = 3000) {
 async function updateAuthUI() {
     /*
     * Checks whether the current user is signed in using Puter's authentication system.
-    * Returns a boolean—true if the user is signed in, false otherwise.
     * Commonly used to conditionally show or hide UI elements based on auth state.
     */
     const isSignedIn = puter.auth.isSignedIn();
