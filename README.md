@@ -36,7 +36,7 @@ This application uses:
 
 ## Getting Started
 
-Run the `index.html` from any deployed location to get started
+Serve the `index.html` file using any static host or local environment
 
 ## License
 
