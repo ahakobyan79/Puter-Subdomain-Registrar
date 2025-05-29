@@ -2,6 +2,10 @@
   <a href="https://subdomain.puter.site" target="_blank">Subdomain Registrar</a>
 </h1>
 
+<p align="center">A simple web application that allows users to register and manage subdomains on puter.site.</p>
+
+<br>
+
 <p align="center">
   <a href="https://subdomain.puter.site" target="_blank">
     <img src="screenshot.png" alt="Screenshot" width="600" />
@@ -9,11 +13,10 @@
 </p>
 
 
-A simple web application that allows users to register and manage subdomains on puter.site.
 
 ## Features
 
-- **User Authentication**: Sign in with your Puter account
+- **User Authentication**: Sign in with your [Puter](https://puter.com) account
 - **Subdomain Availability Check**: Real-time checking if your desired subdomain is available
 - **Folder Selection**: Choose where to store your subdomain files
 - **Automatic Deployment**: Instantly publishes your subdomain after registration
@@ -30,7 +33,7 @@ A simple web application that allows users to register and manage subdomains on 
 ## Technical Details
 
 This application uses:
-- Puter.js SDK for authentication, file system operations, and hosting
+- [Puter.js](https://developer.puter.com) for authentication, file system operations, and hosting
 - Vanilla JavaScript for the frontend
 - Modern CSS for styling
 
