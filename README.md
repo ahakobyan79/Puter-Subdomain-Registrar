@@ -36,7 +36,7 @@ This application uses:
 
 ## Getting Started
 
-Simply open the `index.html` file in a web browser.
+Run the `index.html` from any deployed location to get started
 
 ## License
 
