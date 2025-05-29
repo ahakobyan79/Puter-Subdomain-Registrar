@@ -36,7 +36,7 @@ This application uses:
 
 ## Getting Started
 
-Serve the `index.html` file using any static host or local environment
+Access the `index.html` file via a local server or an [online host](https://puter.com)
 
 ## License
 
