@@ -1,7 +1,11 @@
-<h1 align="center">Subdomain Registrar</h1>
+<h1 align="center">
+  <a href="https://subdomain.puter.site" target="_blank">Subdomain Registrar</a>
+</h1>
 
 <p align="center">
-  <img src="screenshot.png" alt="Screenshot" width="600" />
+  <a href="https://subdomain.puter.site" target="_blank">
+    <img src="screenshot.png" alt="Screenshot" width="600" />
+  </a>
 </p>
 
 
